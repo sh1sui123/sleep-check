@@ -1,0 +1,10 @@
+@import url('https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@500;600&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tailwind-theme.css";
+@import "./typography.css";
+
+body {
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
