@@ -1,5 +1,14 @@
-// EXPORTS: CaffeineLevel, ISleepLog, IUserSettings, ISleepMetrics, IDisruptionReason,
-// IDisruptionResult, IPlanTask, IPlanDay, IRecoveryPlan, IPlanReview
+// EXPORTS: AccountType, IAccount, CaffeineLevel, ISleepLog, IUserSettings, ISleepMetrics,
+// IDisruptionReason, IDisruptionResult, IPlanTask, IPlanDay, IRecoveryPlan, IPlanReview
+
+export type AccountType = 'office' | 'shift' | 'student';
+
+export interface IAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  createdAt: string; // ISO 时间
+}
 
 export type CaffeineLevel = 'none' | 'afternoon' | 'evening';
 

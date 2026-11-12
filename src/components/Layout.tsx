@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Moon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
+import { ACCOUNT_TYPE_META } from '@/data/settings';
+import { useSession, useAccounts } from '@/hooks/useSession';
 import { useSleepApp } from '@/hooks/useSleepApp';
 
 const NAV = [
@@ -16,6 +19,9 @@ const NAV = [
 export const Layout = () => {
   const { settings } = useSleepApp();
   const { pathname } = useLocation();
+  const session = useSession();
+  const accounts = useAccounts();
+  const current = accounts.find((account) => account.id === session);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark');
@@ -35,6 +41,11 @@ export const Layout = () => {
             <Moon className="size-5 text-primary" aria-hidden="true" />
             <span className="font-serif text-lg font-semibold tracking-tight">安睡管家</span>
             <span className="hidden text-xs text-muted-foreground sm:inline">不依赖设备，1 分钟记录</span>
+            {current && (
+              <Badge variant="outline" className="max-w-[9rem] truncate">
+                {current.name} · {ACCOUNT_TYPE_META[current.type].label}
+              </Badge>
+            )}
           </div>
           <nav aria-label="主导航" className="flex gap-1 overflow-x-auto pb-0.5">
             {NAV.map((item) => {

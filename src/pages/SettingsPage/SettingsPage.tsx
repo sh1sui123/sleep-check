@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Database, Download, Moon, ShieldCheck, Sparkles, Sun, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { Database, Download, LogOut, Moon, ShieldCheck, Sparkles, Sun, Trash2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useSleepApp } from '@/hooks/useSleepApp';
+import { useAccounts, useSession } from '@/hooks/useSession';
+import { deleteAccount, setSessionId } from '@/lib/account';
+import { ACCOUNT_TYPE_META } from '@/data/settings';
 import { generatePlan } from '@/lib/sleep';
 import { formatDuration } from '@/lib/format';
 
@@ -26,7 +30,27 @@ const DAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
 
 export default function SettingsPage() {
   const { settings, logs, plan, demo, updateSettings, savePlan, loadSample, clearAll, exportData } = useSleepApp();
+  const navigate = useNavigate();
+  const session = useSession();
+  const accounts = useAccounts();
+  const current = accounts.find((account) => account.id === session);
+  const otherAccounts = accounts.filter((account) => account.id !== session);
   const [clearOpen, setClearOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+
+  const switchAccount = () => {
+    setSessionId('');
+    toast.success('已退出当前账号');
+    navigate('/auth', { replace: true });
+  };
+
+  const removeCurrentAccount = () => {
+    if (!current) return;
+    deleteAccount(current.id);
+    setRemoveOpen(false);
+    toast.success(`已删除账号「${current.name}」`);
+    navigate('/auth', { replace: true });
+  };
 
   const changeTargetWake = (value: string) => {
     if (!value) return;
@@ -85,6 +109,39 @@ export default function SettingsPage() {
         <h1 className="font-serif text-2xl font-semibold tracking-tight">我的</h1>
         <p className="mt-1 text-sm text-muted-foreground">目标作息、提醒、数据都放在这里。</p>
       </div>
+
+      <Card>
+        <CardHeader className="gap-1">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserRound className="size-4 text-primary" aria-hidden="true" /> 当前账号
+          </CardTitle>
+          <CardDescription>账号决定目标作息的默认值与数据归属，数据仍只保存在本浏览器。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {current ? (
+            <div className="rounded-md border border-border px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="truncate text-sm font-medium">{current.name}</p>
+                <Badge variant="secondary">{ACCOUNT_TYPE_META[current.type].label}</Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{ACCOUNT_TYPE_META[current.type].traits}</p>
+              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                创建于 {format(new Date(current.createdAt), 'yyyy-MM-dd')} · 本周机还有 {otherAccounts.length} 个账号
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">当前未登录账号。</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={switchAccount}>
+              <LogOut className="mr-1 size-3.5" aria-hidden="true" /> 切换账号
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setRemoveOpen(true)}>
+              <Trash2 className="mr-1 size-3.5" aria-hidden="true" /> 删除当前账号
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="gap-1">
@@ -308,6 +365,22 @@ export default function SettingsPage() {
             >
               确认删除
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={removeOpen} onOpenChange={setRemoveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除当前账号？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除账号「{current?.name ?? ''}」及其名下的 {logs.length} 条记录、恢复计划与设置，且无法恢复。
+              其他账号的数据不受影响。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={removeCurrentAccount}>确认删除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
